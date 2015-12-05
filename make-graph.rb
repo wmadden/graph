@@ -2,69 +2,63 @@
 
 require "./lib/graph"
 
-g = Graph.new
+g = Graph.new({
+  "Marktanalyse" => { duration: 3, dependencies: %w(Zielgruppe Spielmechanik) },
+  "Zielgruppe" => { duration: 2, dependencies: %w(Story) },
+  "Spielmechanik" => { duration: 5, dependencies: %w(Story MovementSystem AttackSystem ScoreSystem) },
 
-dependency_hash = {
-  "Marktanalyse" => %w(Zielgruppe Spielmechanik),
-  "Zielgruppe" => %w(Story),
-  "Spielmechanik" => %w(Story MovementSystem AttackSystem ScoreSystem),
-  
-  "Story" => %w(M1 PlayerDesign EnemyDesign EnvironmentDesign LevelDesign),
-  "PlayerDesign" => %w(M1),
-  "EnemyDesign" => %w(M1),
-  "EnvironmentDesign" => %w(M1),
-  "LevelDesign" => %w(M1),
-  "M1" => %w(Enemy3D LevelDeko Boss3D EnvironmentEffekte EnemySounds GegnerKlassen Boss StartMenu OptionsMenu StageSelectMenu InGameHUD GUISounds EnvironmentSounds Musik Level1bis5 BossLevel Player3D PlayerEffekte EnemyEffekte StageSelectMenu PlayerSkripte PlayerSounds),
+  "Story" => { duration: 5, dependencies: %w(M1 PlayerDesign EnemyDesign EnvironmentDesign LevelDesign) },
+  "PlayerDesign" => { duration: 5, dependencies: %w(M1) },
+  "EnemyDesign" => { duration: 10, dependencies: %w(M1) },
+  "EnvironmentDesign" => { duration: 10, dependencies: %w(M1) },
+  "LevelDesign" => { duration: 10, dependencies: %w(M1) },
+  "M1" => { duration: 0, dependencies: %w(Enemy3D LevelDeko Boss3D EnvironmentEffekte EnemySounds GegnerKlassen Boss StartMenu OptionsMenu StageSelectMenu InGameHUD GUISounds EnvironmentSounds Musik Level1bis5 BossLevel Player3D PlayerEffekte EnemyEffekte StageSelectMenu PlayerSkripte PlayerSounds) },
 
-  "MovementSystem" => %w(M2),
-  "AttackSystem" => %w(M2),
-  "ScoreSystem" => %w(M2),
-  "M2" => %w(PlayerEffekte EnemyEffekte EnvironmentEffekte Level1bis5 BossLevel PlayerSkripte GegnerKlassen Boss SpawnSystem),
-  
-  "Player3D" => %w(M3 PlayerRigAnimation),
-  "PlayerRigAnimation" => %w(M3 EnemyEffekte),
-  "M3" => %w(PlayerEffekte),
-  
-  "Enemy3D" => %w(M4 EnemyRigAnimation),
-  "EnemyRigAnimation" => %w(M4),
-  "M4" => %w(EnemyEffekte),
-  
-  "LevelDeko" => %w(M5),
-  "Boss3D" => %w(M5 BossRigAnimation),
-  "BossRigAnimation" => %w(M5),
-  "M5" => %w(EarlyAccess),
+  "MovementSystem" => { duration: 5, dependencies: %w(M2) },
+  "AttackSystem" => { duration: 5, dependencies: %w(M2) },
+  "ScoreSystem" => { duration: 5, dependencies: %w(M2) },
+  "M2" => { duration: 0, dependencies: %w(PlayerEffekte EnemyEffekte EnvironmentEffekte Level1bis5 BossLevel PlayerSkripte GegnerKlassen Boss SpawnSystem) },
 
-  "PlayerEffekte" => %w(M6),
-  "EnemyEffekte" => %w(M6),
-  "EnvironmentEffekte" => %w(M6),
-  "M6" => %w(EarlyAccess),
-  
-  "StartMenu" => %w(M7),
-  "OptionsMenu" => %w(M7),
-  "StageSelectMenu" => %w(M7),
-  "InGameHUD" => %w(M7),
-  "M7" => %w(EarlyAccess),
+  "Player3D" => { duration: 10, dependencies: %w(M3 PlayerRigAnimation) },
+  "PlayerRigAnimation" => { duration: 10, dependencies: %w(M3 EnemyEffekte) },
+  "M3" => { duration: 0, dependencies: %w(PlayerEffekte) },
 
-  "GUISounds" => %w(M8),
-  "PlayerSounds" => %w(M8),
-  "EnemySounds" => %w(M8),
-  "EnvironmentSounds" => %w(M8),
-  "Musik" => %w(M8),
-  "M8" => %w(EarlyAccess),
+  "Enemy3D" => { duration: 15, dependencies: %w(M4 EnemyRigAnimation) },
+  "EnemyRigAnimation" => { duration: 20, dependencies: %w(M4) },
+  "M4" => { duration: 0, dependencies: %w(EnemyEffekte) },
 
-  "Level1bis5" => %w(M9),
-  "BossLevel" => %w(M9),
-  "PlayerSkripte" => %w(M9),
-  "GegnerKlassen" => %w(M9),
-  "Boss" => %w(M9),
-  "SpawnSystem" => %w(M9),
-  "M9" => %w(EarlyAccess),
+  "LevelDeko" => { duration: 20, dependencies: %w(M5) },
+  "Boss3D" => { duration: 10, dependencies: %w(M5 BossRigAnimation) },
+  "BossRigAnimation" => { duration: 10, dependencies: %w(M5) },
+  "M5" => { duration: 0, dependencies: %w(EarlyAccess) },
 
-}
-g.add_dependencies(dependency_hash)
-dependency_hash.each do |node_id, values|
-  g.table_node(node_id)
-end
+  "PlayerEffekte" => { duration: 5, dependencies: %w(M6) },
+  "EnemyEffekte" => { duration: 5, dependencies: %w(M6) },
+  "EnvironmentEffekte" => { duration: 10, dependencies: %w(M6) },
+  "M6" => { duration: 0, dependencies: %w(EarlyAccess) },
+
+  "StartMenu" => { duration: 5, dependencies: %w(M7) },
+  "OptionsMenu" => { duration: 5, dependencies: %w(M7) },
+  "StageSelectMenu" => { duration: 5, dependencies: %w(M7) },
+  "InGameHUD" => { duration: 10, dependencies: %w(M7) },
+  "M7" => { duration: 0, dependencies: %w(EarlyAccess) },
+
+  "GUISounds" => { duration: 10, dependencies: %w(M8) },
+  "PlayerSounds" => { duration: 10, dependencies: %w(M8) },
+  "EnemySounds" => { duration: 15, dependencies: %w(M8) },
+  "EnvironmentSounds" => { duration: 15, dependencies: %w(M8) },
+  "Musik" => { duration: 30, dependencies: %w(M8) },
+  "M8" => { duration: 0, dependencies: %w(EarlyAccess) },
+
+  "Level1bis5" => { duration: 20, dependencies: %w(M9) },
+  "BossLevel" => { duration: 5, dependencies: %w(M9) },
+  "PlayerSkripte" => { duration: 10, dependencies: %w(M9) },
+  "GegnerKlassen" => { duration: 20, dependencies: %w(M9) },
+  "Boss" => { duration: 10, dependencies: %w(M9) },
+  "SpawnSystem" => { duration: 10, dependencies: %w(M9) },
+  "M9" => { duration: 0, dependencies: %w(EarlyAccess) },
+  "EarlyAccess" => { duration: 0, dependencies: [] },
+})
 
 g.node("M1")[:shape] = "diamond"
 g.node("M2")[:shape] = "diamond"
@@ -75,7 +69,6 @@ g.node("M6")[:shape] = "diamond"
 g.node("M7")[:shape] = "diamond"
 g.node("M8")[:shape] = "diamond"
 g.node("M9")[:shape] = "diamond"
-
 
 # Generate output image
 g.draw(:pdf, "graph")
