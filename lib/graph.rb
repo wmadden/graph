@@ -6,11 +6,12 @@ class Graph
   def initialize
     # Create a new graph
     @graph = GraphViz.new( :G, :type => :digraph )
+    @graph["nodesep"] = 1.2
     @nodes = {}
   end
 
   def add_edge(node1_name, node2_name)
-    @graph.add_edges(node(node1_name), node(node2_name))
+    @graph.add_edges(node(node1_name), node(node2_name), {"arrowhead" => "none"})
   end
 
   def draw(filetype, filename)
@@ -29,7 +30,8 @@ class Graph
     @nodes[name] ||= add_node(name)
   end
 
-  def table_node(id, name:, duration:, earliest_start:, latest_start:, earliest_end:, latest_end:)
+  def table_node(id, name: nil, duration: "", earliest_start: "", latest_start: "", earliest_end: "", latest_end: "")
+    name ||= id
     tnode = node(id)
     tnode[:label] = GraphViz::Types::HtmlString.new(%(
       <table align="left" border="0" cellborder="0" cellspacing="0" cellpadding="10">
@@ -62,7 +64,7 @@ class Graph
   def add_node(name)
     raise "Node #{name} is already in the graph!" if @nodes[name]
     @nodes[name] = @graph.add_nodes(name, {
-      label: name, shape: "box", margin: 0.3, fontname: "Arial",
+      label: name, shape: "rectangle", margin: 0.3,
     })
   end
 

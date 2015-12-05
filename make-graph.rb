@@ -4,53 +4,78 @@ require "./lib/graph"
 
 g = Graph.new
 
-g.add_dependencies({
-  "1.1" => %w(1.2 1.3),
-  "1.2" => %w(2.1),
-  "1.3" => %w(2.1 3.1 3.2 3.3),
-  "2.1" => %w(2.2 2.3 2.4 2.5 6.1 6.2 6.3 6.4 6.5 7.1 7.4 7.5 8.1 8.2),
-  "2.2" => %w(4.1 5.1 5.2 7.2 9.1),
-  "2.3" => %w(4.3 4.6 5.3 7.3 9.2 9.3),
-  "2.4" => %w(4.5),
-  "2.5" => %w(end),
-  "3.1" => %w(5.1 5.2 5.3 8.1 8.2 9.1 9.2 9.3 9.4),
-  "3.2" => %w(5.1 5.2 5.3 8.1 8.2 9.1 9.2 9.3 9.4),
-  "3.3" => %w(5.1 5.2 5.3 8.1 8.2 9.1 9.2 9.3 9.4),
-  "4.1" => %w(4.2 5.1),
-  "4.2" => %w(5.1 5.2),
-  "4.3" => %w(4.4 5.2),
-  "4.4" => %w(end),
-  "4.5" => %w(end),
-  "4.6" => %w(4.7),
-  "4.7" => %w(end),
-  "5.1" => %w(end),
-  "5.2" => %w(end),
-  "5.3" => %w(end),
-  "6.1" => %w(end),
-  "6.2" => %w(end),
-  "6.3" => %w(end),
-  "6.4" => %w(end),
-  "7.1" => %w(end),
-  "7.2" => %w(end),
-  "7.3" => %w(end),
-  "7.4" => %w(end),
-  "7.5" => %w(end),
-  "8.1" => %w(end),
-  "8.2" => %w(end),
-  "9.1" => %w(end),
-  "9.2" => %w(end),
-  "9.3" => %w(end),
-  "9.4" => %w(end),
-  "9.5" => %w(end),
-})
+dependency_hash = {
+  "Marktanalyse" => %w(Zielgruppe Spielmechanik),
+  "Zielgruppe" => %w(Story),
+  "Spielmechanik" => %w(Story MovementSystem AttackSystem ScoreSystem),
+  
+  "Story" => %w(M1 PlayerDesign EnemyDesign EnvironmentDesign LevelDesign),
+  "PlayerDesign" => %w(M1),
+  "EnemyDesign" => %w(M1),
+  "EnvironmentDesign" => %w(M1),
+  "LevelDesign" => %w(M1),
+  "M1" => %w(Enemy3D LevelDeko Boss3D EnvironmentEffekte EnemySounds GegnerKlassen Boss StartMenu OptionsMenu StageSelectMenu InGameHUD GUISounds EnvironmentSounds Musik Level1bis5 BossLevel Player3D PlayerEffekte EnemyEffekte StageSelectMenu PlayerSkripte PlayerSounds),
 
-g.table_node("1.1", name: "My fave node",
-  duration: 10,
-  earliest_start: 11,
-  latest_start: 12,
-  earliest_end: 13,
-  latest_end: 14
-)
+  "MovementSystem" => %w(M2),
+  "AttackSystem" => %w(M2),
+  "ScoreSystem" => %w(M2),
+  "M2" => %w(PlayerEffekte EnemyEffekte EnvironmentEffekte Level1bis5 BossLevel PlayerSkripte GegnerKlassen Boss SpawnSystem),
+  
+  "Player3D" => %w(M3 PlayerRigAnimation),
+  "PlayerRigAnimation" => %w(M3 EnemyEffekte),
+  "M3" => %w(PlayerEffekte),
+  
+  "Enemy3D" => %w(M4 EnemyRigAnimation),
+  "EnemyRigAnimation" => %w(M4),
+  "M4" => %w(EnemyEffekte),
+  
+  "LevelDeko" => %w(M5),
+  "Boss3D" => %w(M5 BossRigAnimation),
+  "BossRigAnimation" => %w(M5),
+  "M5" => %w(EarlyAccess),
+
+  "PlayerEffekte" => %w(M6),
+  "EnemyEffekte" => %w(M6),
+  "EnvironmentEffekte" => %w(M6),
+  "M6" => %w(EarlyAccess),
+  
+  "StartMenu" => %w(M7),
+  "OptionsMenu" => %w(M7),
+  "StageSelectMenu" => %w(M7),
+  "InGameHUD" => %w(M7),
+  "M7" => %w(EarlyAccess),
+
+  "GUISounds" => %w(M8),
+  "PlayerSounds" => %w(M8),
+  "EnemySounds" => %w(M8),
+  "EnvironmentSounds" => %w(M8),
+  "Musik" => %w(M8),
+  "M8" => %w(EarlyAccess),
+
+  "Level1bis5" => %w(M9),
+  "BossLevel" => %w(M9),
+  "PlayerSkripte" => %w(M9),
+  "GegnerKlassen" => %w(M9),
+  "Boss" => %w(M9),
+  "SpawnSystem" => %w(M9),
+  "M9" => %w(EarlyAccess),
+
+}
+g.add_dependencies(dependency_hash)
+dependency_hash.each do |node_id, values|
+  g.table_node(node_id)
+end
+
+g.node("M1")[:shape] = "diamond"
+g.node("M2")[:shape] = "diamond"
+g.node("M3")[:shape] = "diamond"
+g.node("M4")[:shape] = "diamond"
+g.node("M5")[:shape] = "diamond"
+g.node("M6")[:shape] = "diamond"
+g.node("M7")[:shape] = "diamond"
+g.node("M8")[:shape] = "diamond"
+g.node("M9")[:shape] = "diamond"
+
 
 # Generate output image
-g.draw(:png, "graph")
+g.draw(:pdf, "graph")
