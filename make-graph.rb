@@ -11,16 +11,9 @@ class Graph
     @nodes = {}
   end
 
-  def add_node(name)
-    raise "Node #{name} is already in the graph!" if @nodes[name]
-    @nodes[name] = @graph.add_nodes(name, { label: name, sides: 4 })
-  end
-
   def add_edge(node1_name, node2_name)
-    node1 = @nodes[node1_name]
-    raise "Unknown node #{node1_name}" unless node1
-    node2 = @nodes[node2_name]
-    raise "Unknown node #{node2_name}" unless node2
+    node1 = @nodes[node1_name] || add_node(node1_name)
+    node2 = @nodes[node2_name] || add_node(node2_name)
 
     @graph.add_edges(node1, node2)
   end
@@ -37,23 +30,17 @@ class Graph
     end
   end
 
+  private
+
+  def add_node(name)
+    raise "Node #{name} is already in the graph!" if @nodes[name]
+    @nodes[name] = @graph.add_nodes(name, { label: name, shape: "rectangle", margin: 0.1 })
+  end
+
 end
 
 g = Graph.new
 
-# Define node
-(1..3).each { |i| g.add_node("1.#{i}") }
-(1..5).each { |i| g.add_node("2.#{i}") }
-(1..3).each { |i| g.add_node("3.#{i}") }
-(1..7).each { |i| g.add_node("4.#{i}") }
-(1..3).each { |i| g.add_node("5.#{i}") }
-(1..5).each { |i| g.add_node("6.#{i}") }
-(1..5).each { |i| g.add_node("7.#{i}") }
-(1..2).each { |i| g.add_node("8.#{i}") }
-(1..5).each { |i| g.add_node("9.#{i}") }
-g.add_node( "end" )
-
-# Create edges
 g.add_dependencies({
   "1.1" => %w(1.2 1.3),
   "1.2" => %w(2.1),
@@ -93,5 +80,6 @@ g.add_dependencies({
   "9.4" => %w(end),
   "9.5" => %w(end),
 })
+
 # Generate output image
 g.draw("graph.png")
