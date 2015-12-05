@@ -40,17 +40,13 @@ class Graph
 
   def calculate_earliest_times
     @dependency_tree.each do |node_id, descriptor|
-      puts "Considering #{node_id}: #{descriptor.inspect}"
       set_earliest_start(node_id, 0) unless descriptor[:earliest_start]
-      puts "  #{descriptor.inspect}"
 
       descriptor[:dependencies].each do |dependency_id|
         dependency_descriptor = node_descriptor(dependency_id)
-        puts "  Considering dependent: #{dependency_id} #{dependency_descriptor.inspect}"
         if descriptor[:earliest_end] > (dependency_descriptor[:earliest_start] || 0)
           set_earliest_start(dependency_id, descriptor[:earliest_end])
         end
-        puts "    #{dependency_descriptor.inspect}"
       end
     end
   end
