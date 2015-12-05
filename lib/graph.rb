@@ -97,20 +97,25 @@ class Graph
       <table align="left" border="0" cellborder="0" cellspacing="0" cellpadding="10">
         <tr>
           <td border="1">#{descriptor[:name] || id}</td>
-          <td border="1">#{descriptor[:duration]}</td>
+          <td border="1">Duration: #{descriptor[:duration]}</td>
         </tr>
         <tr>
           <td colspan="2" cellpadding="0">
             <table align="left" border="0" cellborder="1" cellspacing="0" cellpadding="10">
               <tr>
-                <td>#{descriptor[:earliest_start]}</td>
-                <td>#{descriptor[:latest_start]}</td>
+                <td>Earliest start: #{descriptor[:earliest_start]}</td>
+                <td>Latest start: #{descriptor[:latest_start]}</td>
               </tr>
               <tr>
-                <td>#{descriptor[:earliest_end]}</td>
-                <td>#{descriptor[:latest_end]}</td>
+                <td>Earliest end: #{descriptor[:earliest_end]}</td>
+                <td>Latest end: #{descriptor[:latest_end]}</td>
               </tr>
             </table>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" border="1">
+            #{id}
           </td>
         </tr>
       </table>
