@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require "lib/graph"
+require "./lib/graph"
 
 g = Graph.new
 
