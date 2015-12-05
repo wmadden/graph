@@ -44,5 +44,13 @@ g.add_dependencies({
   "9.5" => %w(end),
 })
 
+g.table_node("1.1", name: "My fave node",
+  duration: 10,
+  earliest_start: 11,
+  latest_start: 12,
+  earliest_end: 13,
+  latest_end: 14
+)
+
 # Generate output image
 g.draw(:png, "graph")

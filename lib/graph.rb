@@ -6,7 +6,6 @@ class Graph
   def initialize
     # Create a new graph
     @graph = GraphViz.new( :G, :type => :digraph )
-    @graph["fontname"] = "Arial"
     @nodes = {}
   end
 
@@ -30,12 +29,40 @@ class Graph
     @nodes[name] ||= add_node(name)
   end
 
+  def table_node(id, name:, duration:, earliest_start:, latest_start:, earliest_end:, latest_end:)
+    tnode = node(id)
+    tnode[:label] = GraphViz::Types::HtmlString.new(%(
+      <table align="left" border="0" cellborder="0" cellspacing="0" cellpadding="10">
+        <tr>
+          <td border="1">#{name}</td>
+          <td border="1">#{duration}</td>
+        </tr>
+        <tr>
+          <td colspan="2" cellpadding="0">
+            <table align="left" border="0" cellborder="1" cellspacing="0" cellpadding="10">
+              <tr>
+                <td>#{earliest_start}</td>
+                <td>#{latest_start}</td>
+              </tr>
+              <tr>
+                <td>#{earliest_end}</td>
+                <td>#{latest_end}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    ))
+    tnode[:shape] = "plaintext"
+    tnode[:margin] = 0
+  end
+
   private
 
   def add_node(name)
     raise "Node #{name} is already in the graph!" if @nodes[name]
     @nodes[name] = @graph.add_nodes(name, {
-      label: name, shape: "house", margin: 0.3,
+      label: name, shape: "box", margin: 0.3, fontname: "Arial",
     })
   end
 
