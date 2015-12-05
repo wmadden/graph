@@ -1,17 +1,19 @@
 require 'ruby-graphviz'
 
+DEFAULT_COLOR = "#999999FF"
+CRITICAL_PATH_COLOR = "red"
+
 class Graph
   attr_reader :graph
 
   def initialize(dependency_tree)
     @dependency_tree = dependency_tree
     # Create a new graph
-    @graph = GraphViz.new( :G, :type => :digraph )
-    @graph["nodesep"] = 1.2
+    @graph = GraphViz.new( :G, :type => :digraph, :splines => "ortho" )
     @nodes = {}
     calculate_earliest_times
     calculate_latest_times
-    parse_tree
+    add_nodes_and_edges
   end
 
   def draw(filetype, filename)
@@ -28,8 +30,13 @@ class Graph
     @dependency_tree[id]
   end
 
-  def add_edge(node1_name, node2_name)
-    @graph.add_edges(node(node1_name), node(node2_name))
+  def add_edge(node1_id, node2_id)
+    edge = @graph.add_edges(node(node1_id), node(node2_id))
+    if node_descriptor(node1_id)[:in_critical_path] && node_descriptor(node2_id)[:in_critical_path]
+      edge[:color] = CRITICAL_PATH_COLOR
+    else
+      edge[:color] = DEFAULT_COLOR
+    end
   end
 
   def set_earliest_start(node_id, earliest_start)
@@ -68,9 +75,11 @@ class Graph
       descriptor[:latest_end] = latest_start_dates.min
       descriptor[:latest_start] = descriptor[:latest_end] - descriptor[:duration]
     end
+    descriptor[:buffer] = descriptor[:latest_end] - descriptor[:earliest_end]
+    descriptor[:in_critical_path] = descriptor[:buffer] == 0
   end
 
-  def parse_tree
+  def add_nodes_and_edges
     @dependency_tree.each do |node_id, descriptor|
       descriptor[:dependencies].each do |dependency|
         add_edge(node_id, dependency)
@@ -81,7 +90,7 @@ class Graph
   def add_node(id)
     raise "Node #{id} is already in the graph!" if @nodes[id]
     new_node = @graph.add_nodes(id, {
-      label: id, shape: "rectangle", margin: 0.3,
+      label: id, shape: "rectangle", margin: 0.3, color: DEFAULT_COLOR,
     })
     @nodes[id] = new_node
     render_table_for_node(id)
@@ -92,16 +101,20 @@ class Graph
     name ||= id
     tnode = node(id)
     descriptor = node_descriptor(id)
-    raise "No descriptor for #{id.inspect}" unless descriptor
+    border_width = 1
+    if descriptor[:in_critical_path]
+      tnode[:color] = CRITICAL_PATH_COLOR
+      tnode[:fontcolor] = CRITICAL_PATH_COLOR
+    end
     tnode[:label] = GraphViz::Types::HtmlString.new(%(
       <table align="left" border="0" cellborder="0" cellspacing="0" cellpadding="10">
         <tr>
-          <td border="1">#{descriptor[:name] || id}</td>
-          <td border="1">Duration: #{descriptor[:duration]}</td>
-        </tr>
-        <tr>
-          <td colspan="2" cellpadding="0">
-            <table align="left" border="0" cellborder="1" cellspacing="0" cellpadding="10">
+          <td cellpadding="0">
+            <table align="left" border="0" cellborder="#{border_width}" cellspacing="0" cellpadding="10">
+              <tr>
+                <td>#{descriptor[:name] || id}</td>
+                <td>Duration: #{descriptor[:duration]}</td>
+              </tr>
               <tr>
                 <td>Earliest start: #{descriptor[:earliest_start]}</td>
                 <td>Latest start: #{descriptor[:latest_start]}</td>
@@ -114,8 +127,13 @@ class Graph
           </td>
         </tr>
         <tr>
-          <td colspan="2" border="1">
-            #{id}
+          <td border="#{border_width}">
+            Buffer: #{descriptor[:buffer]}
+          </td>
+        </tr>
+        <tr>
+          <td border="#{border_width}">
+            ID: #{id}
           </td>
         </tr>
       </table>
