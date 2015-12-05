@@ -2,32 +2,54 @@
 
 require 'ruby-graphviz'
 
-# Create a new graph
-g = GraphViz.new( :G, :type => :digraph )
+class Graph
 
-# Create two nodes
-one1 = g.add_nodes( "1.1" )
-one2 = g.add_nodes( "1.2" )
-one3 = g.add_nodes( "1.3" )
+  def initialize
+    # Create a new graph
+    @graph = GraphViz.new( :G, :type => :digraph )
+    @nodes = {}
+  end
 
-two1 = g.add_nodes( "2.1" )
-two2 = g.add_nodes( "2.2" )
-two3 = g.add_nodes( "2.3" )
+  def add_node(name)
+    raise "Node #{name} is already in the graph!" if @nodes[name]
+    @nodes[name] = @graph.add_nodes(name)
+  end
 
-three1 = g.add_nodes( "3.1" )
-three2 = g.add_nodes( "3.2" )
-three3 = g.add_nodes( "3.3" )
+  def add_edge(node1, node2)
+    @graph.add_edges(node1, node2)
+  end
 
-# Create an edge between the two nodes
-g.add_edges( one1, one2 )
-g.add_edges( one1, one3 )
-g.add_edges( one2, two1 )
-g.add_edges( one3, two1 )
-g.add_edges( one3, three1 )
-g.add_edges( one3, three2 )
-g.add_edges( one3, three3 )
-g.add_edges( two1, two2 )
-g.add_edges( two1, two3 )
+  def draw(filename)
+    @graph.output( :png => filename )
+  end
+
+end
+
+g = Graph.new
+
+# Define nodes
+g.add_node( "1.1" )
+g.add_node( "1.2" )
+g.add_node( "1.3" )
+
+g.add_node( "2.1" )
+g.add_node( "2.2" )
+g.add_node( "2.3" )
+
+g.add_node( "3.1" )
+g.add_node( "3.2" )
+g.add_node( "3.3" )
+
+# Create edges
+g.add_edge( "1.1", "1.2" )
+g.add_edge( "1.1", "1.3" )
+g.add_edge( "1.2", "2.1" )
+g.add_edge( "1.3", "2.1" )
+g.add_edge( "1.3", "3.1" )
+g.add_edge( "1.3", "3.2" )
+g.add_edge( "1.3", "3.3" )
+g.add_edge( "2.1", "2.2" )
+g.add_edge( "2.1", "2.3" )
 
 # Generate output image
-g.output( :png => "hello_world.png" )
+g.draw("graph.png")
