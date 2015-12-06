@@ -3,142 +3,205 @@ require 'ruby-graphviz'
 DEFAULT_COLOR = "#999999FF"
 CRITICAL_PATH_COLOR = "red"
 
-class Graph
-  attr_reader :graph
+class Node
+  attr_accessor(
+    :id,
+    :name,
+    :duration,
+    :milestone,
+  )
 
-  def initialize(dependency_tree)
-    @dependency_tree = dependency_tree
-    # Create a new graph
-    @graph = GraphViz.new( :G, :type => :digraph, :splines => "ortho" )
-    @nodes = {}
-    calculate_earliest_times
-    calculate_latest_times
-    add_nodes_and_edges
+  attr_reader(
+    :dependencies,
+    :dependent_nodes,
+  )
+
+  def initialize(id: nil, name: nil, duration: 0, milestone: nil)
+    @dependencies = []
+    @dependent_nodes = []
+    @id = id
+    @name = name
+    @duration = duration
+    @milestone = milestone
   end
 
-  def draw(filetype, filename)
-    @graph.output( filetype => "#{filename}.#{filetype}" )
+  def earliest_start
+    @earliest_start ||= (@dependencies.map { |dependency| dependency.earliest_end }.max || 0)
   end
 
-  def node(name)
-    @nodes[name] ||= add_node(name)
+  def earliest_end
+    earliest_start + @duration
+  end
+
+  def latest_end(indent = 0)
+    @latest_end ||= @dependent_nodes.map { |dependent| dependent.latest_start(indent + 1) }.min || earliest_end
+  end
+
+  def latest_start(indent = 0)
+    latest_end - @duration
+  end
+
+  def depends_on?(node)
+    node == self || dependencies.any? { |dependency| dependency.depends_on?(node) }
+  end
+
+  def add_dependency(node)
+    find_cycle_with(node)
+    dependencies << node unless dependencies.include?(node)
+    node.add_dependent_node(self)
+  end
+
+  def buffer
+    latest_end - earliest_end
+  end
+
+  def in_critical_path
+    buffer == 0
+  end
+
+  protected
+
+  def find_cycle_with(node, cycle = [])
+    cycle += [self]
+    if node == self
+      raise "Cyclic dependency: #{cycle.map{|n| n.name}.join(', ')}, #{node.name}"
+    end
+    dependencies.each { |d| d.find_cycle_with(node, cycle)}
+  end
+
+  def add_dependent_node(node)
+    find_cycle_with(node)
+    dependent_nodes << node unless dependent_nodes.include?(node)
+  end
+end
+
+class GraphBuilder
+  def self.from_hash(dependency_tree)
+    self.new.send(:build_from_hash, dependency_tree)
   end
 
   private
 
-  def node_descriptor(id)
-    @dependency_tree[id]
+  def initialize
+    @nodes_by_id = {}
+    @graph = Graph.new(@nodes_by_id.values)
   end
 
-  def add_edge(node1_id, node2_id)
-    edge = @graph.add_edges(node(node1_id), node(node2_id))
-    if node_descriptor(node1_id)[:in_critical_path] && node_descriptor(node2_id)[:in_critical_path]
-      edge[:color] = CRITICAL_PATH_COLOR
-    else
-      edge[:color] = DEFAULT_COLOR
+  def build_from_hash(dependency_tree)
+    dependency_tree.each do |node_id, attributes|
+      dependencies = attributes.delete(:dependencies)
+      node = get_or_create_node(node_id, attributes)
+      dependencies.each do |dependency_id|
+        dependency_attributes = dependency_tree[dependency_id].reject { |k| k == :dependencies }
+        dependency_node = get_or_create_node(dependency_id, dependency_attributes)
+        dependency_node.add_dependency( node ) # Fuck it, reverse it
+      end
+    end
+    @graph
+  end
+
+  def get_or_create_node(node_id, attributes)
+    node = @nodes_by_id[node_id]
+    attributes[:id] = node_id
+    attributes[:name] ||= node_id
+    unless node
+      node = Node.new(attributes)
+      @nodes_by_id[node_id] = node
+      @graph.nodes << node
+    end
+    node
+  end
+end
+
+class GraphRenderer
+  def self.draw(graph, filetype, filename)
+    self.new(graph).draw(filetype, filename)
+  end
+
+  def initialize(graph)
+    @graph = graph
+  end
+
+  def draw(filetype, filename)
+    @graphviz = GraphViz.new( :G, :type => :digraph, :splines => "ortho" )
+
+    draw_nodes
+    draw_edges
+
+    @graphviz.output( filetype => "#{filename}.#{filetype}" )
+  end
+
+  private
+
+  def draw_nodes
+    @graphviz_nodes = {}
+    @graph.nodes.each do |node|
+      @graphviz_nodes[node] = draw_node(node)
     end
   end
 
-  def set_earliest_start(node_id, earliest_start)
-    descriptor = node_descriptor(node_id)
-    descriptor[:earliest_start] = earliest_start
-    descriptor[:earliest_end] = descriptor[:earliest_start] + descriptor[:duration]
-  end
-
-  def calculate_earliest_times
-    @dependency_tree.each do |node_id, descriptor|
-      set_earliest_start(node_id, 0) unless descriptor[:earliest_start]
-
-      descriptor[:dependencies].each do |dependency_id|
-        dependency_descriptor = node_descriptor(dependency_id)
-        if descriptor[:earliest_end] > (dependency_descriptor[:earliest_start] || 0)
-          set_earliest_start(dependency_id, descriptor[:earliest_end])
-        end
+  def draw_edges
+    @graph.nodes.each do |node|
+      node.dependencies.each do |dependency|
+        color = node.in_critical_path && dependency.in_critical_path ? CRITICAL_PATH_COLOR : DEFAULT_COLOR
+        @graphviz.add_edges(dependency, node, { color: color })
       end
     end
   end
 
-  def calculate_latest_times
-    @dependency_tree.each do |node_id, descriptor|
-      calculate_latest_times_for(node_id)
-    end
-  end
-
-  def calculate_latest_times_for(node_id)
-    descriptor = node_descriptor(node_id)
-    return descriptor[:latest_end] if descriptor[:latest_end]
-    if descriptor[:dependencies].length == 0
-      descriptor[:latest_start] = descriptor[:earliest_start]
-      descriptor[:latest_end] = descriptor[:earliest_end]
-    else
-      latest_start_dates = descriptor[:dependencies].map { |d| calculate_latest_times_for(d); node_descriptor(d)[:latest_start] }
-      descriptor[:latest_end] = latest_start_dates.min
-      descriptor[:latest_start] = descriptor[:latest_end] - descriptor[:duration]
-    end
-    descriptor[:buffer] = descriptor[:latest_end] - descriptor[:earliest_end]
-    descriptor[:in_critical_path] = descriptor[:buffer] == 0
-  end
-
-  def add_nodes_and_edges
-    @dependency_tree.each do |node_id, descriptor|
-      descriptor[:dependencies].each do |dependency|
-        add_edge(node_id, dependency)
-      end
-    end
-  end
-
-  def add_node(id)
-    raise "Node #{id} is already in the graph!" if @nodes[id]
-    new_node = @graph.add_nodes(id, {
-      label: id, shape: "rectangle", margin: 0.3, color: DEFAULT_COLOR,
-    })
-    @nodes[id] = new_node
-    render_table_for_node(id)
-    new_node
-  end
-
-  def render_table_for_node(id)
-    name ||= id
-    tnode = node(id)
-    descriptor = node_descriptor(id)
+  def draw_node(node)
     border_width = 1
-    if descriptor[:in_critical_path]
-      tnode[:color] = CRITICAL_PATH_COLOR
-      tnode[:fontcolor] = CRITICAL_PATH_COLOR
+    node_options = {}
+    if node.in_critical_path
+      node_options[:color] = CRITICAL_PATH_COLOR
+      node_options[:fontcolor] = CRITICAL_PATH_COLOR
     end
-    tnode[:label] = GraphViz::Types::HtmlString.new(%(
+    if node.milestone
+      node_options[:shape] = "diamond"
+    else
+      node_options[:shape] = "plaintext"
+    end
+    node_options[:label] = GraphViz::Types::HtmlString.new(%(
       <table align="left" border="0" cellborder="0" cellspacing="0" cellpadding="10">
         <tr>
           <td cellpadding="0">
             <table align="left" border="0" cellborder="#{border_width}" cellspacing="0" cellpadding="10">
               <tr>
-                <td>#{descriptor[:name] || id}</td>
-                <td>Duration: #{descriptor[:duration]}</td>
+                <td>#{node.name}</td>
+                <td>Duration: #{node.duration}</td>
               </tr>
               <tr>
-                <td>Earliest start: #{descriptor[:earliest_start]}</td>
-                <td>Latest start: #{descriptor[:latest_start]}</td>
+                <td>Earliest start: #{node.earliest_start}</td>
+                <td>Latest start: #{node.latest_start}</td>
               </tr>
               <tr>
-                <td>Earliest end: #{descriptor[:earliest_end]}</td>
-                <td>Latest end: #{descriptor[:latest_end]}</td>
+                <td>Earliest end: #{node.earliest_end}</td>
+                <td>Latest end: #{node.latest_end}</td>
               </tr>
             </table>
           </td>
         </tr>
         <tr>
           <td border="#{border_width}">
-            Buffer: #{descriptor[:buffer]}
+            Buffer: #{node.buffer}
           </td>
         </tr>
         <tr>
           <td border="#{border_width}">
-            ID: #{id}
+            ID: #{node.id}
           </td>
         </tr>
       </table>
     ))
-    tnode[:shape] = "plaintext"
-    tnode[:margin] = 0
+    node_options[:margin] = 0
+    @graphviz.add_nodes(node.id, node_options)
+  end
+end
+
+class Graph
+  attr_reader :nodes
+
+  def initialize(nodes)
+    @nodes = nodes
   end
 end
