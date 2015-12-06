@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
-require "./lib/graph"
+require "./lib/graph_builder"
+require "./lib/graph_renderer"
 
 g = GraphBuilder.from_hash({
   "Marktanalyse" => { duration: 3, dependencies: %w(Zielgruppe Spielmechanik) },
