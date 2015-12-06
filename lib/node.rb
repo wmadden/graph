@@ -27,11 +27,11 @@ class Node
     earliest_start + @duration
   end
 
-  def latest_end(indent = 0)
-    @latest_end ||= @dependent_nodes.map { |dependent| dependent.latest_start(indent + 1) }.min || earliest_end
+  def latest_end
+    @latest_end ||= @dependent_nodes.map { |dependent| dependent.latest_start }.min || earliest_end
   end
 
-  def latest_start(indent = 0)
+  def latest_start
     latest_end - @duration
   end
 
