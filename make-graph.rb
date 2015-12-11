@@ -6,6 +6,7 @@ require "./lib/graph_renderer"
 g = GraphBuilder.from_hash({
   #"ID of Node" => {name: "display name, if not given defaults to ID",
   # duration: Duration of work package in int, 
+  # milestone: defines wether or not this node is a milestone and if true, will put it in a diamond shape,
   # dependencies: Nodes that depend on the completion of the current node to be started (Yes, the name is wrong, it should be... dependors?)}
   "1.1" => { name: "Marktanalyse", duration: 3, dependencies: %w(1.2 1.3) },
   "1.2" => { name: "Zielgruppe analy. und def.", duration: 2, dependencies: %w(2.1) },
